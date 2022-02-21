@@ -1,1 +1,2 @@
 E:\cpp\testTask\Server\Debug\Server.exe
+C:\Users\karen\Desktop\cpp\testTask\Server\Debug\Server.exe

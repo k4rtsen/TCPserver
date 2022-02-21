@@ -20,6 +20,7 @@ int main() {
 	const char* ip = "127.0.0.1";
 	unsigned short portTCP = 5555;
 	char download_dir[256] = "temp";
+	char buff[1024];
 
 	cout << "The server is ready to go, your default settings:\n\tIP: " << ip << "\n\tport: " << portTCP << "\n\tDownload directory: " << download_dir << endl;
 
@@ -45,19 +46,64 @@ int main() {
 		cout << "Error #2\n";
 	}
 	else {
-		char fileName[256];
-		char portUDP[256];
+		// обмен данными...
+		char HfileName[256];
+		char HtempPort[256];
+		//char* ptr_temp = new char[256]; // host var
+		string fileName;
+		unsigned short portUDP = 0;
 
-		// передача данных...
 		cout << "Client Connected!\n";
-		char msg[256] = "The server is ready to accept the file!";
-		send(TCPconn, msg, sizeof(msg), NULL);
 
-		// принятие имени и размера файла, а также порта для UDP сокета
-		recv(TCPconn, fileName, sizeof(msg), NULL);
+		// принятие имени и порта для UDP сокета
+		recv(TCPconn, HfileName, sizeof(HfileName), NULL); // faleName
+		fileName = (string)HfileName;
 		// accept file size
-		recv(TCPconn, portUDP, sizeof(msg), NULL);
+		recv(TCPconn, HtempPort, sizeof(HtempPort), NULL);
+		portUDP = atoi(HtempPort);
 		cout << "Client: \n\tUDPport: " << portUDP << "\n\tFile name: " << fileName << endl;
+		
+		// создание UDP сокета
+		SOCKET UDPconn;
+		UDPconn = socket(AF_INET, SOCK_DGRAM, 0);
+		if (UDPconn == INVALID_SOCKET) {
+			cout << "UDP socket error" << endl;
+			return -1;
+		}
+
+		// связывание сокета с локальным адресом 
+		SOCKADDR_IN local_addr;
+		local_addr.sin_family = AF_INET;
+		local_addr.sin_addr.s_addr = INADDR_ANY;
+		local_addr.sin_port = htons(portUDP);
+
+		if (bind(UDPconn, (sockaddr*)&local_addr, sizeof(local_addr))) {
+			cout << "UDP bind error" << endl;
+			closesocket(UDPconn);
+			return -1;
+		}
+
+		// обработка пакетов, присланных клиентами
+		while (1)
+		{
+			sockaddr_in client_addr;
+			int client_addr_size = sizeof(client_addr);
+			int bsize = recvfrom(UDPconn, &buff[0],
+				sizeof(buff) - 1, 0,
+				(sockaddr*)&client_addr, &client_addr_size);
+			if (bsize == SOCKET_ERROR)
+				cout << "recvfrom() error" << endl;
+			// добавление завершающего нуля
+			buff[bsize] = 0;
+			// Вывод на экран 
+			printf("C=>S:%s\n", &buff[0]);
+			// ВЫХОД ИЗ ЦИКЛА
+			if (!strcmp(buff, "quit")) break;
+
+			// принятие и сборка файла...
+			
+		}
+		
 	}
 
 	closesocket(TCPconn);
