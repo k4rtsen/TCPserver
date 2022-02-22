@@ -1,11 +1,13 @@
 ﻿#pragma comment(lib, "ws2_32.lib")
 #include <winsock2.h>
 #include <iostream>
+#include <fstream>
+#include <string>
 
 #pragma warning(disable: 4996)
 
 using namespace std;
-
+#define Nsize 1024
 int main() {
 	//WSAStartup
 	// загрузка необходимой библиотеки
@@ -19,8 +21,8 @@ int main() {
 
 	const char* ip = "127.0.0.1";
 	unsigned short portTCP = 5555;
-	char download_dir[256] = "temp";
-	char buff[1024];
+	string download_dir = "temp";
+	char buff[Nsize];
 
 	cout << "The server is ready to go, your default settings:\n\tIP: " << ip << "\n\tport: " << portTCP << "\n\tDownload directory: " << download_dir << endl;
 
@@ -49,7 +51,6 @@ int main() {
 		// обмен данными...
 		char HfileName[256];
 		char HtempPort[256];
-		//char* ptr_temp = new char[256]; // host var
 		string fileName;
 		unsigned short portUDP = 0;
 
@@ -83,6 +84,10 @@ int main() {
 			return -1;
 		}
 
+		// создание файла
+		fstream Rfile;
+		Rfile.open(fileName, ios::out);
+
 		// обработка пакетов, присланных клиентами
 		while (1)
 		{
@@ -94,16 +99,32 @@ int main() {
 			if (bsize == SOCKET_ERROR)
 				cout << "recvfrom() error" << endl;
 			// добавление завершающего нуля
-			buff[bsize] = 0;
-			// Вывод на экран 
-			printf("C=>S:%s\n", &buff[0]);
+			buff[bsize] = 0; // без него будет выводиться весь мусор из массива
+
+			// Определяем IP-адрес клиента и прочие атрибуты
+			HOSTENT* hst = gethostbyaddr((char*)
+				&client_addr.sin_addr, 4, AF_INET);
+
 			// ВЫХОД ИЗ ЦИКЛА
 			if (!strcmp(buff, "quit")) break;
 
-			// принятие и сборка файла...
-			
+			if (!Rfile.is_open()) {
+				cout << "Unable to find file named: " << fileName;
+			}
+			else {
+				cout << "Writing to file...\n";
+				// Передача в файл
+				Rfile << buff;
+			}
+
+			// сравнение ip из TCP сокета и UDP сокета, если одинаковы, то... 
+			if (inet_ntoa(client_addr.sin_addr) == inet_ntoa(addr.sin_addr))
+			{
+				// ...отправляем подтверждение на принятие датаграммы
+				send(TCPconn, "OK", sizeof("OK"), NULL);
+			}
 		}
-		
+		Rfile.close();
 	}
 
 	closesocket(TCPconn);

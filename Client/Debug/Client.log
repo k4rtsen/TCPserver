@@ -1,2 +1,3 @@
 ﻿  Client.cpp
+C:\Users\karen\Desktop\cpp\testTask\Client\Client.cpp(7,31): warning C4081: требуется ")"; обнаружен "newline"
   Client.vcxproj -> C:\Users\karen\Desktop\cpp\testTask\Client\Debug\Client.exe
