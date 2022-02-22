@@ -95,7 +95,37 @@ int main() {
 				}
 				// иначе разбиваем на части
 				else {
-
+					int count_iter;
+					(buffer.length() % MAXSIZE) != 0 ? 
+						count_iter = (buffer.length() / MAXSIZE) + 1 : 
+						count_iter = (buffer.length() / MAXSIZE);
+					for (int i = 0; i < count_iter; i++) {
+						string new_buff;
+						if (i == count_iter - 1) {
+							new_buff = buffer.substr(i * (MAXSIZE - 1));
+							do {
+								char conf[256];
+								sendto(UDPconn, new_buff.c_str(), strlen(new_buff.c_str()), 0,
+									(sockaddr*)&dest_addr, sizeof(dest_addr));
+								// для подтверждения принимаем данные
+								recv(TCPconn, conf, sizeof(conf), NULL);
+								if (strcmp(conf, "OK"))
+									flag = true;
+							} while (flag);
+						}
+						else {
+							new_buff = buffer.substr(i * (MAXSIZE - 1), (MAXSIZE - 1));
+							do {
+								char conf[256];
+								sendto(UDPconn, new_buff.c_str(), strlen(new_buff.c_str()), 0,
+									(sockaddr*)&dest_addr, sizeof(dest_addr));
+								// для подтверждения принимаем данные
+								recv(TCPconn, conf, sizeof(conf), NULL);
+								if (strcmp(conf, "OK"))
+									flag = true;
+							} while (flag);
+						}
+					}
 				}
 				// после каждого цикла сообщаем серверу о новой строчке
 				sendto(UDPconn, "\n", strlen("\n"), 0,
